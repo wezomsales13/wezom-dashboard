@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Clutch",
+    "url": "https://clutch.co/profile/wezom#reviews",
+    "rating": 4.9,
+    "reviews": 127,
+    "color": "#E34234",
+    "updated": "2025-05-06"
+  },
+  {
+    "name": "G2",
+    "url": "https://www.g2.com/products/wezom/reviews",
+    "rating": 4.8,
+    "reviews": 43,
+    "color": "#FF492C",
+    "updated": "2025-05-06"
+  },
+  {
+    "name": "Google Maps UA",
+    "url": "https://share.google/GZ8qGxWMH28h1ZHmS",
+    "rating": 4.7,
+    "reviews": 89,
+    "color": "#4285F4",
+    "updated": "2025-05-06"
+  },
+  {
+    "name": "Google Maps EU",
+    "url": "https://share.google/R7XP6h2ap2GSg2q61",
+    "rating": 4.8,
+    "reviews": 62,
+    "color": "#34A853",
+    "updated": "2025-05-06"
+  },
+  {
+    "name": "IT-Rating",
+    "url": "https://it-rating.com/profile/wezom",
+    "rating": 4.7,
+    "reviews": 22,
+    "color": "#6366F1",
+    "updated": "2025-05-06"
+  },
+  {
+    "name": "GoodFirms",
+    "url": "https://www.goodfirms.co/company/wezom",
+    "rating": 4.9,
+    "reviews": 91,
+    "color": "#00C16E",
+    "updated": "2025-05-06"
+  }
+]

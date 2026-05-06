@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wezom · Reviews Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --card2: #20243a;
+      --border: #2a2d3a;
+      --accent: #6366f1;
+      --accent2: #22d3ee;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    /* HEADER */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo { font-size: 22px; font-weight: 800; color: var(--text); }
+    .header-logo span { color: var(--accent2); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .updated-badge {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--muted);
+    }
+
+    /* LAYOUT */
+    .main { max-width: 1300px; margin: 0 auto; padding: 28px 24px; }
+
+    /* CONTROLS BAR */
+    .controls {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 24px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 18px;
+    }
+    .controls-label { font-size: 13px; color: var(--muted); margin-right: 4px; }
+    select {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 7px 12px; border-radius: 8px;
+      font-size: 13px; cursor: pointer; outline: none;
+    }
+    select:focus { border-color: var(--accent); }
+    .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+    .btn {
+      padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: var(--bg);
+      color: var(--text); transition: all .15s;
+    }
+    .btn:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn.primary:hover { background: #5254cc; border-color: #5254cc; color: #fff; }
+
+    /* STAT CARDS */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 20px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
+    .stat-value { font-size: 30px; font-weight: 800; line-height: 1; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .stat.c-green .stat-value { color: var(--green); }
+    .stat.c-blue .stat-value { color: var(--accent2); }
+    .stat.c-yellow .stat-value { color: var(--yellow); }
+    .stat.c-purple .stat-value { color: var(--accent); }
+
+    /* GRID */
+    .grid { display: grid; gap: 16px; margin-bottom: 16px; }
+    .grid.col2 { grid-template-columns: 1fr 1fr; }
+    .grid.col3 { grid-template-columns: 2fr 1fr; }
+    @media (max-width: 900px) { .grid.col2, .grid.col3 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .icon { font-size: 16px; }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead th {
+      text-align: left; padding: 10px 14px;
+      color: var(--muted); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .5px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    thead th:hover { color: var(--accent2); }
+    .sort-icon { margin-left: 4px; opacity: .4; font-size: 10px; }
+    .sort-icon.active { opacity: 1; color: var(--accent2); }
+    tbody td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,.02); }
+
+    .platform-cell { display: flex; align-items: center; gap: 10px; }
+    .p-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; flex-shrink: 0;
+    }
+    .p-name { font-weight: 600; font-size: 14px; }
+
+    .stars-row { display: flex; align-items: center; gap: 6px; }
+    .stars { color: var(--yellow); font-size: 13px; letter-spacing: -1px; }
+    .rating-num { font-weight: 700; font-size: 15px; }
+    .rating-max { color: var(--muted); font-size: 11px; }
+
+    .reviews-count { font-weight: 700; font-size: 15px; }
+    .reviews-label { color: var(--muted); font-size: 11px; }
+
+    .link-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      color: var(--accent2); font-size: 12px; font-weight: 600;
+      text-decoration: none; padding: 5px 10px;
+      border: 1px solid rgba(34,211,238,.3); border-radius: 6px;
+      transition: all .15s;
+    }
+    .link-btn:hover { background: rgba(34,211,238,.1); }
+
+    .date-cell { color: var(--muted); font-size: 12px; }
+
+    /* CHARTS */
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* PLATFORM CARDS (mini) */
+    .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 600px) { .platform-grid { grid-template-columns: repeat(2, 1fr); } }
+    .platform-mini {
+      border-radius: 10px; padding: 14px;
+      border: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .pm-name { font-size: 12px; font-weight: 700; }
+    .pm-rating { font-size: 22px; font-weight: 800; }
+    .pm-reviews { font-size: 11px; color: var(--muted); }
+    .pm-link { font-size: 11px; color: var(--accent2); text-decoration: none; margin-top: 2px; }
+
+    /* AI BLOCK */
+    .ai-output { font-size: 14px; line-height: 1.75; color: var(--muted); }
+    .ai-output h4 { color: var(--accent2); font-size: 13px; font-weight: 700; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
+    .ai-output h4:first-child { margin-top: 0; }
+    .ai-output ul { padding-left: 18px; }
+    .ai-output li { margin-bottom: 4px; }
+    .ai-output p { margin-bottom: 8px; }
+    .ai-placeholder { color: var(--muted); font-size: 14px; }
+    .ai-loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-error { color: var(--red); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-logo">Wezom <span>·</span> Reviews</div>
+  </div>
+  <div class="header-right">
+    <div class="updated-badge" id="updated-badge">⏳ Завантаження...</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <span class="controls-label">Сортувати:</span>
+    <select id="sort-select">
+      <option value="rating_desc">Рейтинг: від високого</option>
+      <option value="rating_asc">Рейтинг: від низького</option>
+      <option value="reviews_desc">Відгуки: від більшого</option>
+      <option value="reviews_asc">Відгуки: від меншого</option>
+      <option value="name_asc">Назва: А → Я</option>
+    </select>
+    <div class="divider"></div>
+    <span class="controls-label">Мін. рейтинг:</span>
+    <select id="filter-rating">
+      <option value="0">Всі платформи</option>
+      <option value="4.5">4.5 і вище</option>
+      <option value="4.8">4.8 і вище</option>
+    </select>
+    <div class="divider"></div>
+    <button class="btn primary" onclick="runAI()">🤖 Запустити AI аналіз</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat c-green">
+      <div class="stat-label">Середній рейтинг</div>
+      <div class="stat-value" id="s-avg">—</div>
+      <div class="stat-sub">по всіх платформах</div>
+    </div>
+    <div class="stat c-blue">
+      <div class="stat-label">Всього відгуків</div>
+      <div class="stat-value" id="s-total">—</div>
+      <div class="stat-sub">зібрано разом</div>
+    </div>
+    <div class="stat c-yellow">
+      <div class="stat-label">Найвищий рейтинг</div>
+      <div class="stat-value" id="s-best-score">—</div>
+      <div class="stat-sub" id="s-best-name">—</div>
+    </div>
+    <div class="stat c-purple">
+      <div class="stat-label">Платформ</div>
+      <div class="stat-value" id="s-count">—</div>
+      <div class="stat-sub">відстежується</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="grid col2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> Рейтинги по платформах</div>
+      <div class="chart-wrap"><canvas id="chart-rating"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💬</span> Розподіл відгуків</div>
+      <div class="chart-wrap"><canvas id="chart-reviews"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title"><span class="icon">📋</span> Всі платформи</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">Платформа <span class="sort-icon" id="sort-name">↕</span></th>
+            <th onclick="sortBy('rating')">Рейтинг <span class="sort-icon" id="sort-rating">↕</span></th>
+            <th onclick="sortBy('reviews')">Відгуки <span class="sort-icon" id="sort-reviews">↕</span></th>
+            <th>Посилання</th>
+            <th onclick="sortBy('updated')">Оновлено <span class="sort-icon" id="sort-updated">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">⏳ Завантаження...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI BLOCK -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🤖</span> Claude AI Аналітика</div>
+    <div id="ai-area">
+      <p class="ai-placeholder">Натисни кнопку <strong style="color:var(--text)">"Запустити AI аналіз"</strong> вгорі — і Claude проаналізує всі платформи, знайде сильні сторони, зони покращення і тренди.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let allData = [];
+let ratingChart, reviewsChart;
+
+// ── ЗАВАНТАЖЕННЯ ДАНИХ ──────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('/data.json?v=' + Date.now());
+    if (!res.ok) throw new Error('не вдалось завантажити data.json');
+    allData = await res.json();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('table-body').innerHTML =
+      `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--red)">
+        ❌ Помилка завантаження data.json: ${e.message}
+      </td></tr>`;
+    return;
+  }
+
+  const latest = allData.map(d => d.updated).sort().reverse()[0];
+  document.getElementById('updated-badge').textContent = '🕐 Дані від: ' + latest;
+
+  renderAll();
+}
+
+// ── ФІЛЬТР + СОРТУВАННЯ ─────────────────────────────────────────────────────
+function getFiltered() {
+  const minRating = parseFloat(document.getElementById('filter-rating').value);
+  const [field, dir] = document.getElementById('sort-select').value.split('_');
+
+  return [...allData]
+    .filter(d => d.rating >= minRating)
+    .sort((a, b) => {
+      const av = field === 'name' || field === 'updated' ? a[field] : a[field];
+      const bv = field === 'name' || field === 'updated' ? b[field] : b[field];
+      if (typeof av === 'string') return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return dir === 'asc' ? av - bv : bv - av;
+    });
+}
+
+function sortBy(field) {
+  const sel = document.getElementById('sort-select');
+  const cur = sel.value;
+  if (cur.startsWith(field)) {
+    sel.value = field + (cur.endsWith('desc') ? '_asc' : '_desc');
+  } else {
+    sel.value = field + '_desc';
+  }
+  renderAll();
+}
+
+document.getElementById('sort-select').addEventListener('change', renderAll);
+document.getElementById('filter-rating').addEventListener('change', renderAll);
+
+// ── РЕНДЕР ──────────────────────────────────────────────────────────────────
+function renderAll() {
+  const data = getFiltered();
+  renderStats(data);
+  renderTable(data);
+  renderCharts(data);
+}
+
+function renderStats(data) {
+  if (!data.length) return;
+  const avg = (data.reduce((s, d) => s + d.rating, 0) / data.length).toFixed(2);
+  const total = data.reduce((s, d) => s + d.reviews, 0);
+  const best = data.reduce((a, b) => a.rating > b.rating ? a : b);
+
+  document.getElementById('s-avg').textContent = avg;
+  document.getElementById('s-total').textContent = total.toLocaleString('uk-UA');
+  document.getElementById('s-best-score').textContent = '★ ' + best.rating;
+  document.getElementById('s-best-name').textContent = best.name;
+  document.getElementById('s-count').textContent = data.length;
+}
+
+function starsHtml(rating) {
+  const full = Math.round(rating);
+  return '★'.repeat(full) + '☆'.repeat(5 - full);
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('table-body');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Нічого не знайдено</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(d => `
+    <tr>
+      <td>
+        <div class="platform-cell">
+          <div class="p-icon" style="background:${d.color}22;color:${d.color}">${d.name[0]}</div>
+          <span class="p-name">${d.name}</span>
+        </div>
+      </td>
+      <td>
+        <div class="stars-row">
+          <span class="stars">${starsHtml(d.rating)}</span>
+          <span class="rating-num">${d.rating}</span>
+          <span class="rating-max">/ 5.0</span>
+        </div>
+      </td>
+      <td>
+        <div class="reviews-count">${d.reviews.toLocaleString('uk-UA')}</div>
+        <div class="reviews-label">відгуків</div>
+      </td>
+      <td>
+        <a href="${d.url}" target="_blank" class="link-btn">↗ Відкрити</a>
+      </td>
+      <td class="date-cell">${d.updated}</td>
+    </tr>
+  `).join('');
+}
+
+function renderCharts(data) {
+  const labels = data.map(d => d.name);
+  const colors = data.map(d => d.color);
+  const gridColor = '#2a2d3a';
+  const tickColor = '#64748b';
+
+  if (ratingChart) ratingChart.destroy();
+  if (reviewsChart) reviewsChart.destroy();
+
+  ratingChart = new Chart(document.getElementById('chart-rating'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: data.map(d => d.rating),
+        backgroundColor: colors.map(c => c + 'bb'),
+        borderColor: colors,
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } },
+        y: { min: 4, max: 5, ticks: { color: tickColor, stepSize: 0.2 }, grid: { color: gridColor } }
+      }
+    }
+  });
+
+  reviewsChart = new Chart(document.getElementById('chart-reviews'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: data.map(d => d.reviews),
+        backgroundColor: colors.map(c => c + 'cc'),
+        borderColor: '#1a1d27',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#e2e8f0', font: { size: 11 }, boxWidth: 12, padding: 14 }
+        }
+      }
+    }
+  });
+}
+
+// ── AI АНАЛІЗ ───────────────────────────────────────────────────────────────
+async function runAI() {
+  const area = document.getElementById('ai-area');
+  area.innerHTML = '<div class="ai-loading"><div class="spinner"></div> Claude аналізує дані, зачекай...</div>';
+
+  try {
+    const res = await fetch('/.netlify/functions/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platforms: allData }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+
+    const result = await res.json();
+    renderAI(result);
+  } catch (e) {
+    area.innerHTML = `<p class="ai-error">❌ Помилка: ${e.message}</p>`;
+  }
+}
+
+function renderAI(d) {
+  const area = document.getElementById('ai-area');
+  area.innerHTML = `
+    <div class="ai-output">
+      <h4>📊 Загальний висновок</h4>
+      <p>${d.summary}</p>
+
+      <h4>💪 Сильні сторони</h4>
+      <ul>${(d.strengths || []).map(s => `<li>${s}</li>`).join('')}</ul>
+
+      <h4>⚠️ Зони покращення</h4>
+      <ul>${(d.improvements || []).map(s => `<li>${s}</li>`).join('')}</ul>
+
+      <h4>📈 Тренди</h4>
+      <p>${d.trends}</p>
+
+      <h4>🏆 Порівняння платформ</h4>
+      <p>${d.platforms_comparison}</p>
+    </div>
+  `;
+}
+
+// ── СТАРТ ────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
