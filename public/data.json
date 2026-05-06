@@ -45,6 +45,15 @@
     "rating": 0,
     "reviews": 0,
     "color": "#6366F1",
+    "updated": "2026-05-06",
+    "exclude_from_avg": true
+  },
+  {
+    "name": "DesignRush",
+    "url": "https://www.designrush.com/agency/profile/wezom",
+    "rating": 4.9,
+    "reviews": 9,
+    "color": "#FF6B35",
     "updated": "2026-05-06"
   }
 ]
